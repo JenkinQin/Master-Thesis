@@ -1,0 +1,46 @@
+pragma solidity ^0.5.0;
+
+contract L2CarSharing{
+
+    address payable public _carOwner;
+    address payable public _carRenter;
+    address payable[] public _watchtowers;
+    uint constant COLLATERAL = 5 ether;
+    uint public _n;
+    bool[] public _watchtowerFunded;
+    CarStatus public _status;
+
+    enum CarStatus{ 
+        Idle, 
+        Pending,
+        Busy,
+        Unavailable
+    }
+
+    constructor (address payable carOwner, address payable[] memory watchtowers) payable public{
+        _n = uint8(watchtowers.length);
+        _carRenter = msg.sender;
+        _carOwner = carOwner;
+        _watchtowers = watchtowers;
+        // to determine the amount of watchtower
+        for (uint8 i = 0; i < _n; ++i) {
+            _watchtowerFunded.push(false);
+        }
+    }
+
+    function open() payable public{
+        // to determine the value
+        assert(msg.value >= 5 ether);
+        for (uint8 idx = 0; idx < _n; ++idx) {
+            require(_watchtowerFunded[idx], 'All watchtowers must fund the channel before opening it');
+        }
+        _status = CarStatus.Pending;
+    }
+    
+
+    function watchtowerCollateral(uint8 idx) external payable{
+        require(msg.value >= COLLATERAL, 'Watchtower pay at least the collateral');
+        _watchtowerFunded[idx] = true;
+    }
+
+}
